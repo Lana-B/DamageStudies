@@ -24,13 +24,15 @@ for j,file_iter in enumerate(files):
 
     with open(dirpath+'/'+file_iter,'rb') as f:
         input_data=np.load(f)
-    histvals=ax1.hist(input_data,bins=100,range=(-10,40),histtype='step',density=True,label=file_iter[:-4])
-    ax1.set_ylim([0.002,0.5])
+    histvals=ax1.hist(input_data,bins=100,range=(-10,100),histtype='step',label=file_iter[:-4])
+    # ax1.set_ylim([0.002,0.5])
+    ax1.set_xlabel('Sigma')
+    ax1.set_ylabel('Entries')
     # maxval= histvals[1][histvals[0].argmax()]
     # input_data=input_data/maxval
     # # plt.clf()
     # _=ax1.hist(input_data,bins=100,range=(-10,40),histtype='step')
-leg = plt.legend(fancybox=True, loc='center')
+leg = plt.legend(fancybox=True, loc='upper right')
 
 plt.pause(0.01)
 input("pause")
