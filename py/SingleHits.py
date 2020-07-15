@@ -17,7 +17,7 @@ def get_files(directory_path):
 
 
 
-dirpath="../outputpy_noMask"
+dirpath="../output_HDR_noMask"
 files, n_files=get_files(dirpath)
 fig3,ax3=plt.subplots(1,1,figsize=(10,6))
 fig4,ax4=plt.subplots(1,1,figsize=(10,6))
@@ -34,21 +34,23 @@ for j,file_iter in enumerate(files):
         ax2.set_yscale('log')
         with open(dirpath+'/'+file_iter,'rb') as f:
             pedSub_data=np.load(f)
-            print(dirpath+'/'+file_iter)
+            print('10',dirpath+'/'+file_iter)
 
-        file_sig=str(file_iter[:-10])+".npy"
+        file_sig=str(file_iter[:-16])+"noMask.npy"
         with open(dirpath+'/'+file_sig,'rb') as f:
             sig2noise_data=np.load(f)
             print (dirpath+'/'+file_sig)
 
-        print(pedSub_data[0,1:3,1:5])
-        print(sig2noise_data[0,1:3,1:5])
+        print(pedSub_data.shape)
+        # print(sig2noise_data[0,1:3,1:5])
 
 
         histvals=ax1.hist(pedSub_data.ravel(),bins=130,range=(-80,700),histtype='step', label="All data")
         histvals=ax2.hist(sig2noise_data.ravel(),bins=120,range=(-40,80),histtype='step', label="All data")
         ax1.set_xlim(-50,700)
         ax2.set_xlim(-40,80)
+        plt.pause(0.01)
+        input("pause")
         kern=np.ones([3,3])
         kern=kern*2
         kern[1,1]=1
@@ -75,7 +77,8 @@ for j,file_iter in enumerate(files):
 
         ax1.hist(pedSub_data[:,:,:][(newarr==1) & (badpixmask3d>0) & (sig2noise_data>4)].ravel(),bins=130,range=(-80,600), label="Single hits")
         ax2.hist(sig2noise_data[:,:,:][(newarr==1)  & (badpixmask3d>0) & (sig2noise_data>4)].ravel(),bins=120,range=(-50,100), label="Single hits")
-
+        plt.pause(0.01)
+        input("pause")
 
         ax1.set_xlabel('Pedestal subtracted ADC',fontsize=18)
         # ax1.set_xlabel('Sigma')

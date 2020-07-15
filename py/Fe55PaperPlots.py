@@ -29,10 +29,11 @@ for j,file_iter in enumerate(files):
     noisehist=False
 
     with open(dirpath+'/'+file_iter,'rb') as f:
-        input_data=np.load(f)
         if "noise" in file_iter:
+            input_data=np.load(f)
             noisehist=True
             print ("noise")
+            print(input_data.shape)
 
     if(noisehist):
         histvals=ax1.hist(input_data,bins=100,range=(-100,650),histtype='step',label=file_iter[:-4])

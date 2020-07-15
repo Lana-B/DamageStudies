@@ -13,7 +13,7 @@ def get_files(directory_path):
     return files,n_files
 
 
-fig1,ax1=plt.subplots(2,1,figsize=(10,10))
+fig1,ax1=plt.subplots(2,1,figsize=(5,8))
 ax1[0].set_yscale('log')
 ax1[1].set_yscale('log')
 
@@ -32,19 +32,23 @@ for j,file_iter in enumerate(files):
             noisehist=True
             print ("noise")
 
+    print(file_iter[:9]+"BPMOnly.npy")
+    with open(dirpath+'/'+file_iter[:9]+"BPMOnly.npy",'rb') as f:
+        BPM_data=np.load(f)
+
     if(noisehist):
-        histvals=ax1[0].hist(input_data.ravel(),bins=100,histtype='step',label=file_iter[:-4],density=True)
+        histvals=ax1[0].hist(input_data[BPM_data>0].ravel(),bins=100,histtype='step',label=file_iter[:-4],density=True)
 
 
-    # else:
-    #     histvals=ax1[1].hist(input_data.ravel(),histtype='step',label=file_iter[:-4])
+    else:
+        histvals=ax1[1].hist(input_data[BPM_data>0].ravel(),bins=100,range=(-10,50),histtype='step',label=file_iter[:-4])
 
 
     # maxval= histvals[1][histvals[0].argmax()]
     # input_data=input_data/maxval
     # # plt.clf()
     # _=ax1.hist(input_data,bins=100,range=(-10,40),histtype='step')
-ax1[0].set_xlim([-100,500])
+ax1[0].set_xlim([-150,400])
 # ax1.set_ylim([0.002,0.5])
 ax1[0].set_xlabel('Pedestal subtracted ADC')
 # ax1.set_xlabel('Sigma')

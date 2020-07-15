@@ -11,8 +11,11 @@ import pandas as pd
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--datasetdir', help='foo help')
+parser.add_argument('--pix', help='foo help')
 args = parser.parse_args()
 alldirs_dir=args.datasetdir
+pix=args.pix
+# print(pix,type(pix),pix.split(','))
 #eg. --datasetdir ../data/Fe-55_0RadDam_40deg/
 print("input files ",args.datasetdir)
 
@@ -21,7 +24,6 @@ def gaus(x,a,x0,sigma):
 
 def midpoints(hvals):
     hvals_shift=np.append(hvals[1:],0)
-
     midp=(hvals+hvals_shift)/2.0
     return midp[:-1]
 
@@ -53,7 +55,6 @@ def chosePix(startx_fn,endx_fn,starty_fn,endy_fn,dirpath_fn,files_fn,n_files_fn)
         if(j%10==0):
             print(j,file_iter)
 
-
         im=plt.imread(str(dirpath_fn+"/"+file_iter)) #np.fromfile(file_iter,dtype='uint16',sep="")
         im=im.astype('float')
 
@@ -69,15 +70,18 @@ def return_param_BPM(even_odd,hist_val,num):
     else:
         eo=0
     # print(even_odd,hist_val)
-    histValues=plt.hist(df[(df['y_vals']%2==eo)&(df['heights']<1000)][hist_val],bins=45)
+    histValues=plt.hist(df[(df['y_vals']%2==eo)&(df['heights']<100)][hist_val],bins=45)
     mphist=midpoints(histValues[1])
-    meanh=df[(df['y_vals']%2==eo)&(df['heights']<1000)&(df['means']>0)][hist_val].mean()
-    stdh=df[(df['y_vals']%2==eo)&(df['heights']<1000)&(df['means']>0)][hist_val].std()
-    popt,pcov=curve_fit(gaus,mphist,histValues[0],p0=[35000,meanh,stdh])
-    # plt.plot(histValues[1][:-1],gaus(histValues[1][:-1],*popt),'ro:',label='fit')
-    # print(popt,meanh,stdh)
+    meanh=df[(df['y_vals']%2==eo)&(df['heights']<100)&(df['means']>0)][hist_val].mean()
+    stdh=df[(df['y_vals']%2==eo)&(df['heights']<100)&(df['means']>0)][hist_val].std()
+    print(meanh,stdh)
+
+    popt,pcov=curve_fit(gaus,mphist[2:],histValues[0][2:],p0=[100,meanh,stdh])
+    plt.plot(mphist,gaus(mphist,*popt),'ro:',label='fit')
+    plt.pause(0.01)
+    input("wait")
 #     plt.show()
-#     plt.clf()
+    plt.clf()
     return popt[1],popt[2]
 
 
@@ -141,59 +145,40 @@ dirs, n_dirs=get_dirs(alldirs_dir)
 for dirpath in dirs:
     print (dirpath)
     files, n_files=get_files(alldirs_dir+'/'+dirpath)
-    damage=dirpath.split('_')[1][:-6]
-    temperature=dirpath.split('_')[2]
-    print(damage,temperature)
+    HDR=dirpath.split('_')[0]
+    temperature=dirpath.split('_')[1][0]
+    print(HDR)
     dirpath=alldirs_dir+'/'+dirpath
     #choose pixels for study
-    #0Rad dam
-    if damage=='0':
 
-        startx=1351
-        starty=2299
-        endx=1400
-        endy=2350
-    # # endx=1450
-    # # endy=2400
+    startx=int(pix.split(',')[0])
+    endx=int(pix.split(',')[1])
+    starty=int(pix.split(',')[2])
+    endy=int(pix.split(',')[3])
 
-    #20 rad dam
-    elif damage=='20':
-        startx=950
-        starty=370
-        endx=1000
-        endy=420
-
-    #40 rad dam
-    elif damage=='40':
-        startx=581
-        starty=1140
-        endx=632
-        endy=1190
+    # startx=1000
+    # starty=1100
+    # endx=1200
+    # endy=1300
 
     chosenPix,chosenPixels=chosePix(startx,endx,starty,endy,dirpath,files,n_files)
 
-    #make std map, check chosen pix area is in right place
-    # std[starty:endy,startx:endx]=0
-    # plt.figure(figsize=(10,10))
-    # plt.imshow(std,vmin=0,vmax=50)
-
     #reshape chosen pix with frames along axis 0 
     chosenPixels3d=chosenPixels.reshape((n_files,(endy-starty),(endx-startx)))
-    # print(chosenPixels3d.shape)
 
     #get bad pixel criteria
     heights, means, stds, x_vals, y_vals, means_array, stds_array, heights_array = bad_pix_qual(startx,endx,starty,endy,chosenPixels3d)
-    # fig,ax=plt.subplots(2,3,figsize=(20,10))
+
     df=pd.DataFrame({'x_vals':x_vals, 'y_vals': y_vals, 'heights':heights, 'means':means, 'stds':stds})
 
-    even_heights_mean,even_heights_std=return_param_BPM("even","heights",0)
-    odd_heights_mean,odd_heights_std=return_param_BPM("odd","heights",0)
+    # even_heights_mean,even_heights_std=return_param_BPM("even","heights",0)
+    # odd_heights_mean,odd_heights_std=return_param_BPM("odd","heights",0)
     even_means_mean,even_means_std=return_param_BPM("even","means",1)
     odd_means_mean,odd_means_std=return_param_BPM("odd","means",1)
     even_stds_mean,even_stds_std=return_param_BPM("even","stds",2)
     odd_stds_mean,odd_stds_std=return_param_BPM("odd","stds",2)
 
-    #make a mask of pixel means aetc
+    #make a mask of pixel means etc
     eo_means_means=np.zeros([endy-starty,endx-startx],dtype='float')
     eo_stds_means=np.zeros([endy-starty,endx-startx],dtype='float')
     eo_means_stds=np.zeros([endy-starty,endx-startx],dtype='float')
@@ -215,6 +200,9 @@ for dirpath in dirs:
     badpixmask[(stds_array>eo_stds_means+5*eo_stds_stds)]=-1
     badpixmask[(means_array<eo_means_means-5*eo_means_stds)]=-1
     badpixmask[(stds_array<eo_stds_means-5*eo_stds_stds)]=-1
+    badpixmask[(means_array<2)]=-1
+    badpixmask[(stds_array<2)]=-1
+
     # plt.imshow(badpixmask)
     # plt.colorbar()
 
@@ -241,47 +229,41 @@ for dirpath in dirs:
     # plt.pause(0.01)
     # input("pasue")
 
-
-    with open('../outputpy/'+damage+'kGy'+temperature+'C_rawdata.npy', 'wb') as f:
+    with open('../output_HDR_noMask/'+HDR+'kGy'+temperature+'C_BPMOnly.npy', 'wb') as f:
         np.save(f, chosenPixels3d)
 
-    with open('../outputpy/'+damage+'kGy'+temperature+'C_meansarray.npy', 'wb') as f:
-        np.save(f, means_array)
-
-    with open('../outputpy/'+damage+'kGy'+temperature+'C_stds_array.npy', 'wb') as f:
-        np.save(f, stds_array)
-
-    with open('../outputpy/'+damage+'kGy'+temperature+'C_BPMOnly.npy', 'wb') as f:
+    with open('../output_HDR_noMask/'+HDR+'kGy'+temperature+'C_BPMOnly.npy', 'wb') as f:
         np.save(f, badpixmask3d)
 
-    with open('../outputpy/'+damage+'kGy'+temperature+'C_pedsub_stddiv_BPM.npy', 'wb') as f:
+    with open('../output_HDR/'+HDR+'kGy'+temperature+'C.npy', 'wb') as f:
         np.save(f, reshaped_CP_BPM)
 
-    with open('../outputpy/'+damage+'kGy'+temperature+'C__pedsub_stddiv_noMask.npy', 'wb') as f:
+    with open('../output_HDR_noMask/'+HDR+'kGy'+temperature+'C_noMask.npy', 'wb') as f:
         np.save(f, reshaped_CP)
 
-    with open('../outputpy/'+damage+'kGy'+temperature+'C_pedsub_noMask.npy', 'wb') as f:
+    with open('../output_HDR_noMask/'+HDR+'kGy'+temperature+'C_noise_noMask.npy', 'wb') as f:
         np.save(f, reshaped_CP_noise)
 
-    with open('../outputpy/'+damage+'kGy'+temperature+'C_pedsub_BPM.npy', 'wb') as f:
+    with open('../output_HDR/'+HDR+'kGy'+temperature+'C_noise.npy', 'wb') as f:
         np.save(f, reshaped_CP_BPM_noise)
 
-    # seed=(reshaped_CP[12,:,:]>3)*1.0
-    # # subseed=seed[1:-1,1:-1]
-    # # seed_loc=np.argwhere(subseed>0.5)+[1,1]
-    # seed_loc=np.argwhere(seed>0.5)
+    seed=(reshaped_CP[17,:,:]>3)*1.0
+    # subseed=seed[1:-1,1:-1]
+    # seed_loc=np.argwhere(subseed>0.5)+[1,1]
+    seed_loc=np.argwhere(seed>0.5)
+
     sample_weights=reshaped_CP[17,:,:][reshaped_CP[17,:,:]>3.0]
     seed_loc=np.argwhere(reshaped_CP[17,:,:]>3.0)
-    with open('../seedloc/seed_loc'+damage+'kGy'+temperature+'C.npy','wb')as f:
+    with open('../seedloc/seed_loc'+HDR+'kGy'+temperature+'C.npy','wb')as f:
         np.save(f,seed_loc)
-    with open('../seedloc/seed_weight'+damage+'kGy'+temperature+'C.npy','wb')as f:
+    with open('../seedloc/seed_weight'+HDR+'kGy'+temperature+'C.npy','wb')as f:
         np.save(f,sample_weights)
 
     sample_weights_noise=reshaped_CP_noise[17,:,:][reshaped_CP_noise[17,:,:]>100.0]
     seed_loc_noise=np.argwhere(reshaped_CP_noise[17,:,:]>100.0)
-    with open('../seedloc/seed_loc'+damage+'kGy'+temperature+'C_noise.npy','wb')as f:
+    with open('../seedloc/seed_loc'+HDR+'kGy'+temperature+'C_noise.npy','wb')as f:
         np.save(f,seed_loc_noise)
-    with open('../seedloc/seed_weight'+damage+'kGy'+temperature+'C_noise.npy','wb')as f:
+    with open('../seedloc/seed_weight'+HDR+'kGy'+temperature+'C_noise.npy','wb')as f:
         np.save(f,sample_weights_noise)
 
 
