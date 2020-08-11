@@ -60,7 +60,7 @@ for j,file_iter in enumerate(files):
         else: 
             continue
     # for i in range(0,40):
-    singlePix=input_data[:,4,13]
+    singlePix=input_data[:,3,13]
 
     binwidth=7
     histValues=ax0.hist(singlePix,bins=np.arange(min(singlePix), max(singlePix) + binwidth, binwidth),histtype='step',label=file_iter[:-4])
@@ -109,7 +109,7 @@ for j,file_iter in enumerate(files):
     print('4',popt2)
     _=ax3.plot(mphist[:histValues[0].argmax()+5],gaus(mphist[:histValues[0].argmax()+5],*popt2),'yo:',label='fit')
 
-    xvals=np.arange(1,101)
+    xvals=np.arange(1,len(singlePix)+1)
     pedsub=singlePix-popt2[1]
     pedsub2=np.copy(pedsub)
     pedsub2[pedsub2<0]=0

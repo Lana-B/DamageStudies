@@ -69,6 +69,7 @@ def return_param_BPM(even_odd,hist_val,num):
     else:
         eo=0
     # print(even_odd,hist_val)
+    # I know this is stupid having the df outside the function but I don't have time to fix it rn
     histValues=plt.hist(df[(df['y_vals']%2==eo)&(df['heights']<1000)][hist_val],bins=45)
     mphist=midpoints(histValues[1])
     meanh=df[(df['y_vals']%2==eo)&(df['heights']<1000)&(df['means']>0)][hist_val].mean()
@@ -99,30 +100,40 @@ def bad_pix_qual(startx_fn,endx_fn,starty_fn,endy_fn,chosenPixels3d_fn):
 
             if (pix_x%30==0 and pix_y%30==0):
                 print(pix_x,pix_y)
-            histValues=plt.hist(chosenPixels3d_fn[:,pix_y,pix_x],bins=45)
+
+            binwidth=7
+            # histValues=plt.hist(chosenPixels3d_fn[:,pix_y,pix_x],bins=45)
+            singlePix=chosenPixels3d_fn[:,pix_y,pix_x]
+            histValues=plt.hist(singlePix,bins=np.arange(min(singlePix), max(singlePix) + binwidth, binwidth))
+
             mphist=midpoints(histValues[1])
             # meanh=chosenPixels3d_fn[:,pix_y,pix_x].mean()
-            meanh=mphist[histValues[0].argmax()]
+            meanArgMax=histValues[0].argmax()
+            meanh=mphist[meanArgMax]
+            # meanh=mphist[histValues[0].argmax()]
 
             stdh=chosenPixels3d_fn[:,pix_y,pix_x].std()
             try:
-                popt,pcov=curve_fit(gaus,mphist,histValues[0],p0=[15,meanh,stdh])
+                popt,pcov=curve_fit(gaus,mphist[:meanArgMax+2],histValues[0][:meanArgMax+2],p0=[15,meanh,stdh])
             except:
                 bad_fits_counter+=1
                 popt=[-1,-1,-1]
                 badfit=True
 
 
-
             heights_array_fn[pix_y,pix_x]=popt[0]
             means_array_fn[pix_y,pix_x]=popt[1]
             stds_array_fn[pix_y,pix_x]=popt[2]
 #             if((pix_x==47) and (pix_y==32)):
-#                 plt.plot(histValues[1][:-1],gaus(histValues[1][:-1],*popt),'ro:',label='fit')
+                # arr=np.arange(min(singlePix),mphist[histValues[0].argmax()+2],2)
+
+#                 plt.plot(arr,gaus(arr,*popt),'r-.',label='fit')
 #                 plt.show()
             plt.cla()
             # plt.clf()
-#             print(pix_x,pix_y,popt)
+            # print(pix_x,pix_y,popt)
+            # print(np.sqrt(np.diag(pcov2)))
+
             # if badfit=False:        
             x_vals_fn=np.append(x_vals_fn,pix_x)
             y_vals_fn=np.append(y_vals_fn,pix_y)
@@ -169,6 +180,12 @@ for dirpath in dirs:
         starty=1140
         endx=632
         endy=1190
+
+    elif damage=='50':
+        startx=581
+        starty=308 #330
+        endx=632
+        endy=358 #380
 
     chosenPix,chosenPixels=chosePix(startx,endx,starty,endy,dirpath,files,n_files)
 
